@@ -1,0 +1,593 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{cite}
+\usepackage{booktabs}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+
+\title{Reinforcement Learning-Driven Diffusion Models for \\
+Topology-Preserving Scientific Data Compression}
+\author{CSE 5539 Course Project}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Scientific simulations generate massive datasets that strain storage and transmission infrastructure. We propose a novel approach combining reinforcement learning (RL) with diffusion models to learn task-specific compression strategies that prioritize preservation of scientifically critical features—specifically topological critical points in scalar fields. Unlike generic compression methods, our approach uses RL to learn what information to preserve based on downstream scientific utility, while diffusion models enable high-quality reconstruction from compressed representations. We evaluate on Nyx cosmological simulations and Miranda turbulence datasets, measuring compression ratio versus critical point preservation fidelity.
+\end{abstract}
+
+\section{Research Question and Motivation}
+
+\subsection{Primary Research Question}
+
+\textbf{Can reinforcement learning guide diffusion-based compression to achieve higher compression ratios while better preserving topologically critical features compared to domain-agnostic compression methods?}
+
+\subsection{Why This Question Is Interesting}
+
+Scientific data compression presents a unique challenge that distinguishes it from natural image compression:
+
+\begin{enumerate}
+    \item \textbf{Scale Problem:} Modern scientific simulations produce petabytes of data. The Nyx cosmological simulations can generate terabytes per run, while turbulence simulations (Miranda) produce similar volumes. Current storage solutions are unsustainable.
+
+    \item \textbf{Heterogeneous Information Density:} Not all data regions are equally important. In cosmology, high-density regions (galaxy clusters, filaments) contain most scientific information, while void regions are relatively uniform. Traditional compression treats all data equally.
+
+    \item \textbf{Critical Points as Scientific Markers:} Topological critical points (maxima, minima, saddle points where $\nabla f = 0$) encode essential structure:
+    \begin{itemize}
+        \item \textit{Nyx:} Critical points identify dark matter halos, cosmic web nodes, and gravitational potential wells
+        \item \textit{Miranda:} Critical points mark vortex cores, turbulent structures, and flow stagnation points
+    \end{itemize}
+
+    \item \textbf{Current Methods Fall Short:} Generic compressors (gzip, HDF5 compression) achieve only 2-5$\times$ compression on scientific data and don't understand scientific importance. Learned compressors focus on perceptual quality for images, not physical fidelity.
+
+    \item \textbf{Opportunity for RL:} The compression-quality trade-off is not fixed—it depends on what we want to preserve. RL can learn this trade-off from reward signals that encode scientific priorities.
+\end{enumerate}
+
+This research matters because it could enable:
+\begin{itemize}
+    \item Running larger simulations with limited storage
+    \item Faster data transmission for distributed scientific collaborations
+    \item Archival of long-term simulation campaigns
+    \item Real-time analysis of streaming simulation data
+\end{itemize}
+
+\section{Related Work and Research Gap}
+
+\subsection{What Other Research Has Told Us}
+
+\subsubsection{Scientific Data Compression}
+
+\begin{itemize}
+    \item \textbf{Traditional Methods:} Lossless compression (gzip, HDF5) achieves 2-5$\times$ on scientific data \cite{lakshminarasimhan2011compressing}. Wavelet-based methods achieve 10-20$\times$ but blur critical features.
+
+    \item \textbf{SZ/ZFP Compressors:} Domain-aware lossy compressors \cite{di2016fast, lindstrom2014fixed} achieve 10-100$\times$ compression by preserving error bounds. However, they use \textit{uniform} error thresholds across the dataset—not adaptive to feature importance.
+
+    \item \textbf{Deep Learning Compressors:} Neural compression (e.g., Ballé et al. \cite{balle2018variational}) achieves high compression on images but targets perceptual quality, not scientific fidelity. Recent work applies these to climate data \cite{glaws2020deep} but doesn't consider topological features.
+\end{itemize}
+
+\subsubsection{Diffusion Models}
+
+\begin{itemize}
+    \item \textbf{Image Generation:} DDPMs \cite{ho2020denoising} and latent diffusion models \cite{rombach2022high} achieve state-of-the-art image generation quality.
+
+    \item \textbf{Scientific Applications:} Recent work applies diffusion to weather forecasting \cite{price2024gencast} and molecular dynamics \cite{hoogeboom2022equivariant}, showing they can learn physical priors.
+
+    \item \textbf{Compression Context:} Diffusion models have been explored for image compression \cite{theis2022lossy} but not for scientific data or topology preservation.
+\end{itemize}
+
+\subsubsection{Reinforcement Learning for Compression}
+
+\begin{itemize}
+    \item \textbf{Video Compression:} RL has been used to optimize bitrate allocation in video coding \cite{chen2019deep}, showing RL can learn complex compression trade-offs.
+
+    \item \textbf{Adaptive Methods:} Some work uses RL for adaptive sampling in scientific simulations \cite{ramanah2020optimal}, but not for compression.
+\end{itemize}
+
+\subsubsection{Topological Data Analysis in Science}
+
+\begin{itemize}
+    \item \textbf{Critical Points in Visualization:} Well-established that critical points encode essential topology \cite{heine2016survey}. Used for feature tracking in cosmology \cite{sousbie2011persistent} and turbulence \cite{kasten2011framework}.
+
+    \item \textbf{Topology-Preserving Simplification:} Prior work simplifies scalar fields while preserving topology \cite{bremer2004topological}, but not in the context of learned compression.
+\end{itemize}
+
+\subsection{Why Current Work Doesn't Answer Our Question}
+
+Existing approaches have critical limitations:
+
+\begin{enumerate}
+    \item \textbf{No Task-Awareness:} SZ/ZFP use uniform error thresholds. They don't know that preserving a density peak's location matters more than preserving void uniformity.
+
+    \item \textbf{No Topology Consideration:} Deep learning compressors optimize for MSE or perceptual metrics (LPIPS, FID), which don't correlate with topological preservation. A small perturbation can move a critical point without large MSE change.
+
+    \item \textbf{No Adaptive Strategies:} Existing methods apply the same compression strategy everywhere. RL could learn: "compress voids aggressively, preserve clusters carefully."
+
+    \item \textbf{Lack of Integration:} No prior work combines:
+    \begin{itemize}
+        \item RL for learning compression policies
+        \item Diffusion models for high-quality reconstruction
+        \item Topological metrics as reward signals
+    \end{itemize}
+\end{enumerate}
+
+The key insight is: \textit{compression is not just about reconstruction error—it's about preserving what matters for downstream science.} Current methods don't learn what matters; we propose using RL to learn this from scientific reward signals.
+
+\section{Experimental Plan}
+
+\subsection{Overall Approach}
+
+Our framework has three components:
+
+\begin{enumerate}
+    \item \textbf{RL Compression Agent:} Learns to decide for each spatial region: (a) compression level, (b) which features to preserve, (c) resource allocation.
+
+    \item \textbf{Diffusion Reconstruction Model:} Takes compressed representation and reconstructs the full field, conditioned on preserved critical information.
+
+    \item \textbf{Reward Function:} Combines compression ratio with critical point preservation metrics.
+\end{enumerate}
+
+\textbf{Key Idea:} The RL agent learns a \textit{compression policy} $\pi(a | s)$ where:
+\begin{itemize}
+    \item State $s$: Local patch features (gradient magnitude, Hessian eigenvalues, density statistics)
+    \item Action $a$: Compression level for this patch (e.g., quantization bitrate, downsampling rate)
+    \item Reward $r$: $r = \alpha \cdot \text{CompressionRatio} - \beta \cdot \text{TopologyLoss} - \gamma \cdot \text{ReconstructionError}$
+\end{itemize}
+
+\subsection{Datasets}
+
+\subsubsection{Nyx Cosmological Simulations}
+
+\begin{itemize}
+    \item \textbf{Source:} Public Nyx simulation data from CCSE (https://ccse.lbl.gov/Research/Nyx/)
+    \item \textbf{Fields:} Dark matter density, baryon density, velocity fields
+    \item \textbf{Resolution:} $512^3$ to $2048^3$ grid points
+    \item \textbf{Critical Points:} Density maxima (halos), saddles (filament junctions)
+    \item \textbf{Size:} ~50-200 GB per snapshot (uncompressed)
+\end{itemize}
+
+\subsubsection{Miranda Turbulence Dataset}
+
+\begin{itemize}
+    \item \textbf{Source:} Public Johns Hopkins Turbulence Database (http://turbulence.pha.jhu.edu/)
+    \item \textbf{Fields:} Velocity ($u, v, w$), pressure, vorticity
+    \item \textbf{Resolution:} $1024^3$ grid points
+    \item \textbf{Critical Points:} Velocity magnitude minima (stagnation points), vorticity maxima (vortex cores)
+    \item \textbf{Size:} ~40-100 GB per timestep
+\end{itemize}
+
+\subsection{Experiments}
+
+\subsubsection{Experiment 1: Baseline Compression Methods}
+
+\textbf{Goal:} Establish performance benchmarks.
+
+\textbf{Methods to Compare:}
+\begin{itemize}
+    \item Generic: gzip, HDF5 compression (lossless)
+    \item Scientific: SZ, ZFP with various error bounds
+    \item Neural: Variational autoencoder (VAE) trained on scientific data
+    \item Oracle: Hand-tuned spatially-adaptive SZ (best case for traditional methods)
+\end{itemize}
+
+\textbf{Metrics:}
+\begin{itemize}
+    \item Compression ratio: $\frac{\text{Original Size}}{\text{Compressed Size}}$
+    \item Critical point detection rate: $\frac{|\text{CP}_\text{reconstructed} \cap \text{CP}_\text{original}|}{|\text{CP}_\text{original}|}$
+    \item Critical point position error: $\text{mean}(\|\mathbf{x}_\text{true} - \mathbf{x}_\text{reconstructed}\|)$
+    \item Reconstruction MSE, Peak Signal-to-Noise Ratio (PSNR)
+    \item Persistence diagram Wasserstein distance (measures topology preservation)
+\end{itemize}
+
+\textbf{Expected Results:}
+\begin{itemize}
+    \item Lossless methods: 2-5$\times$ compression, perfect topology
+    \item SZ/ZFP: 10-50$\times$ compression, 60-80\% critical point preservation
+    \item Neural VAE: 20-100$\times$ compression, 40-70\% critical point preservation (poor topology)
+\end{itemize}
+
+\textbf{What We'd Learn:} This establishes the Pareto frontier of compression vs. topology preservation for existing methods. Our RL approach should push beyond this frontier.
+
+\subsubsection{Experiment 2: Diffusion Model for Reconstruction}
+
+\textbf{Goal:} Train a diffusion model that can reconstruct high-quality scientific fields from compressed representations.
+
+\textbf{Architecture:}
+\begin{itemize}
+    \item 3D U-Net diffusion model (similar to video diffusion models)
+    \item Conditioning: compressed latent vector + preserved critical point locations
+    \item Training: DDPM objective on Nyx/Miranda training sets
+\end{itemize}
+
+\textbf{Ablation Studies:}
+\begin{itemize}
+    \item Unconditional vs. conditioned on critical points
+    \item Different latent space sizes (varying compression)
+    \item Number of diffusion steps vs. reconstruction quality
+\end{itemize}
+
+\textbf{Expected Results:}
+\begin{itemize}
+    \item Unconditional: Good visual quality but poor critical point accuracy
+    \item Conditioned on critical points: Better topology preservation, especially for strong critical points
+    \item Trade-off: More diffusion steps = better quality but slower inference
+\end{itemize}
+
+\textbf{What We'd Learn:} Whether diffusion models can be steered toward topology preservation through conditioning. If negative: diffusion might not be suitable for this task, might need other generative models (normalizing flows, GANs).
+
+\subsubsection{Experiment 3: RL Compression Policy (Core Experiment)}
+
+\textbf{Goal:} Train an RL agent to learn adaptive compression strategies.
+
+\textbf{RL Formulation:}
+\begin{itemize}
+    \item \textbf{Environment:} 3D scientific volume divided into patches
+    \item \textbf{State:} For each patch: local statistics (mean, std, gradient magnitude, Hessian eigenvalues, entropy)
+    \item \textbf{Action:} Compression level $\in$ \{low, medium, high, very-high\} for each patch
+    \item \textbf{Reward:}
+    \[
+    R = \alpha \cdot \log(\text{CompressionRatio}) - \beta \cdot \text{CriticalPointLoss} - \gamma \cdot \text{MSE}
+    \]
+    where:
+    \begin{itemize}
+        \item $\text{CriticalPointLoss} = w_1 \cdot (1 - \text{DetectionRate}) + w_2 \cdot \text{PositionError}$
+        \item $\alpha, \beta, \gamma$ are hyperparameters controlling trade-offs
+    \end{itemize}
+    \item \textbf{Algorithm:} Proximal Policy Optimization (PPO) - stable, sample-efficient
+\end{itemize}
+
+\textbf{Training Procedure:}
+\begin{enumerate}
+    \item Pre-train diffusion model on full-resolution data
+    \item For each episode:
+    \begin{itemize}
+        \item Sample a volume from training set
+        \item Agent selects compression actions for all patches
+        \item Apply compression, encode to latent space
+        \item Diffusion model reconstructs from latent + critical point info
+        \item Compute reward from compression ratio and topology metrics
+        \item Update policy with PPO
+    \end{itemize}
+\end{enumerate}
+
+\textbf{Hyperparameter Exploration:}
+\begin{itemize}
+    \item Reward weights: $\alpha \in \{0.5, 1.0, 2.0\}, \beta \in \{1.0, 5.0, 10.0\}, \gamma \in \{0.1, 1.0\}$
+    \item Patch sizes: $32^3, 64^3, 128^3$
+    \item Action spaces: discrete (4 levels) vs. continuous quantization rates
+\end{itemize}
+
+\textbf{Expected Results:}
+\begin{itemize}
+    \item \textit{Best Case:} RL learns to allocate bits efficiently—high compression in uniform regions, preserves critical regions. Achieves 50-200$\times$ compression with 85-95\% critical point detection rate, outperforming all baselines.
+
+    \item \textit{Moderate Case:} RL matches or slightly exceeds best traditional methods (oracle SZ) but requires less manual tuning. Learns reasonable policies that adapt to data characteristics.
+
+    \item \textit{Worst Case:} RL doesn't converge or learns degenerate policies (e.g., always max compression). This would suggest reward shaping is critical or problem is too complex for PPO.
+\end{itemize}
+
+\textbf{What We'd Learn Depending on Results:}
+
+\begin{itemize}
+    \item \textit{If successful:} RL can learn meaningful scientific priors from reward signals. Follow-up: Can we transfer policies across datasets (Nyx $\to$ Miranda)?
+
+    \item \textit{If moderate:} The bottleneck might be the diffusion model's reconstruction ability, not the RL policy. Follow-up: Better conditioning strategies for diffusion model.
+
+    \item \textit{If fails:} Reward function might not capture topology well, or state representation is insufficient. Follow-up: Richer state features (persistence diagrams?), different RL algorithms (SAC, DQN), or reward shaping experiments.
+\end{itemize}
+
+\subsubsection{Experiment 4: Generalization and Transfer Learning}
+
+\textbf{Goal:} Test if learned policies generalize across datasets and physical regimes.
+
+\textbf{Tests:}
+\begin{enumerate}
+    \item \textbf{Cross-dataset:} Train on Nyx, test on Miranda (and vice versa)
+    \item \textbf{Different resolutions:} Train on $512^3$, test on $1024^3$
+    \item \textbf{Different physics:} Train on one cosmological model, test on another
+    \item \textbf{Temporal:} Train on early timesteps, test on late timesteps
+\end{enumerate}
+
+\textbf{Expected Results:}
+\begin{itemize}
+    \item Within-dataset generalization should be strong
+    \item Cross-dataset (Nyx $\leftrightarrow$ Miranda) will be harder—different physics, different critical point characteristics
+    \item Resolution generalization: if state features are scale-invariant (normalized gradients, etc.), should transfer reasonably well
+\end{itemize}
+
+\textbf{What We'd Learn:} Whether RL learns \textit{domain-specific} strategies or \textit{general principles} of topology-preserving compression. If transfer is poor, suggests learned policies are overfitted to training distribution.
+
+\subsection{Evaluation Metrics}
+
+\begin{table}[h]
+\centering
+\caption{Evaluation Metrics for Compression Methods}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Category} & \textbf{Metric} & \textbf{Why Important} \\ \midrule
+\textbf{Compression} & Compression ratio & Storage savings \\
+& Encoding/decoding time & Practical usability \\ \midrule
+\textbf{Topology} & Critical point detection rate & Feature preservation \\
+& Critical point position error & Spatial accuracy \\
+& Persistence diagram distance & Full topology structure \\ \midrule
+\textbf{Reconstruction} & MSE, PSNR & Overall fidelity \\
+& Structural similarity (SSIM) & Local structure \\
+& Power spectrum error & Statistical properties \\ \midrule
+\textbf{Scientific} & Dark matter halo matching (Nyx) & Domain task \\
+& Vortex identification (Miranda) & Domain task \\ \bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Success Criteria}
+
+We consider the project successful if:
+
+\begin{enumerate}
+    \item \textbf{Primary Goal:} RL-guided compression achieves at least 30\% better critical point preservation than best baseline at same compression ratio, OR achieves 2$\times$ higher compression at same critical point preservation.
+
+    \item \textbf{Secondary Goal:} Learned policies show interpretable behavior (e.g., allocate more bits to high-gradient regions, which aligns with scientific intuition).
+
+    \item \textbf{Learning Goal:} Even if performance doesn't exceed baselines, we gain insights into why—revealing fundamental limits or guiding future work.
+\end{enumerate}
+
+\section{Resource Estimation}
+
+\subsection{Computational Resources}
+
+\begin{table}[h]
+\centering
+\caption{Estimated Computational Requirements}
+\begin{tabular}{@{}llll@{}}
+\toprule
+\textbf{Component} & \textbf{Hardware} & \textbf{Time} & \textbf{Justification} \\ \midrule
+Data preprocessing & CPU cluster & 2-4 hours & Extract critical points, compute statistics \\
+& & & for Nyx/Miranda datasets \\ \midrule
+Baseline experiments & 1-2 GPUs & 8-12 hours & Run SZ/ZFP/VAE, compute metrics \\
+& (V100 or better) & & across multiple configurations \\ \midrule
+Diffusion model training & 2-4 GPUs & 24-48 hours & 3D U-Net on $512^3$ volumes, \\
+& (A100 preferred) & & ~100K iterations \\ \midrule
+RL policy training & 4-8 GPUs & 48-96 hours & PPO requires many environment \\
+& (V100/A100) & & interactions, parallel actors \\
+& & & for sample efficiency \\ \midrule
+Evaluation \& ablations & 2-4 GPUs & 16-24 hours & Test generalization, sensitivity \\ \midrule
+\textbf{Total GPU-hours} & & \textbf{500-800} & \multicolumn{1}{l}{} \\
+\textbf{Wall-clock time} & & \textbf{1-2 weeks} & \multicolumn{1}{l}{With 4-8 GPUs available} \\ \bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{How We Determined These Estimates}
+
+\begin{enumerate}
+    \item \textbf{Diffusion Model:} Based on training times for 2D image diffusion models (12-24 hours for 256$\times$256 images on 1 GPU), scaled up for 3D volumes. 3D convolutions are ~8-10$\times$ more expensive than 2D. Using smaller volumes ($64^3$ patches extracted from $512^3$ volumes) makes this tractable.
+
+    \item \textbf{RL Training:} PPO typically needs 1-10M environment steps. Each step involves compression + diffusion reconstruction (~0.5-1 sec per step). With 8 parallel environments on 8 GPUs: $\frac{5M \text{ steps}}{8 \text{ parallel}} \times 0.5 \text{ sec} \approx 72 \text{ hours}$. Additional time for hyperparameter tuning.
+
+    \item \textbf{Data Size:} Working with subsets of Nyx/Miranda: ~50-100 volumes of $512^3$ each (~10-20 GB total). Full datasets are larger, but we sample representative subsets for training.
+\end{enumerate}
+
+\subsection{Software and Data}
+
+\begin{itemize}
+    \item \textbf{Frameworks:} PyTorch, PyTorch Lightning (diffusion models), Stable-Baselines3 or CleanRL (RL), scikit-image (topology analysis)
+    \item \textbf{Compression Baselines:} SZ (https://github.com/szcompressor/SZ), ZFP (https://github.com/LLNL/zfp)
+    \item \textbf{Datasets:}
+    \begin{itemize}
+        \item Nyx: Available from CCSE, requires ~50-100 GB storage
+        \item Miranda: Available from JHU Turbulence Database, similar size
+    \end{itemize}
+    \item \textbf{Hardware Access:} University HPC cluster with A100/V100 GPUs or cloud credits (AWS, GCP with academic grants)
+\end{itemize}
+
+\subsection{Risk Mitigation}
+
+\begin{itemize}
+    \item \textbf{If GPU access limited:} Work with smaller volumes ($256^3$ instead of $512^3$), fewer RL training steps, or use 2D slices as proof-of-concept
+
+    \item \textbf{If RL training too slow:} Start with simpler RL problem (2D slices), use model-free algorithms like DQN instead of PPO, or reduce action space (3 levels instead of 4)
+
+    \item \textbf{If diffusion model doesn't converge:} Fall back to simpler generative models (VAE, normalizing flows) or deterministic super-resolution networks
+\end{itemize}
+
+\section{Expected Results (Placeholder for Final Report)}
+
+\textit{This section will be completed after running experiments. Preliminary expectations based on pilot studies:}
+
+\subsection{What We Learned}
+
+\textit{To be filled in after experiments. We expect to learn:}
+\begin{itemize}
+    \item Whether RL can discover non-obvious compression strategies
+    \item How diffusion models handle scientific data vs. natural images
+    \item Trade-offs between compression ratio and topological fidelity
+    \item Limitations of current approaches and directions for improvement
+\end{itemize}
+
+\subsection{Did We Resolve the Research Question?}
+
+\textit{To be filled in. Possible outcomes:}
+\begin{itemize}
+    \item \textbf{Fully resolved:} RL-guided compression demonstrably superior, understand when/why it works
+    \item \textbf{Partially resolved:} Works for some scenarios (e.g., Nyx but not Miranda), need more investigation
+    \item \textbf{Negative result:} Current approach doesn't outperform baselines, but we understand why (reward design? diffusion model limitations? insufficient training?)
+\end{itemize}
+
+\section{Follow-up Experiments}
+
+Based on potential outcomes, here are follow-up directions:
+
+\subsection{If Primary Experiments Succeed}
+
+\begin{enumerate}
+    \item \textbf{Multi-field Compression:} Extend to jointly compress multiple related fields (density + velocity in Nyx, velocity + pressure in Miranda). RL learns cross-field dependencies.
+
+    \item \textbf{Time-series Compression:} Compress sequences of timesteps, exploiting temporal coherence. RL could learn keyframe selection strategies.
+
+    \item \textbf{Interactive Compression:} User-in-the-loop RL where scientists provide feedback on what features to preserve. Learn personalized compression policies.
+
+    \item \textbf{Real-time Compression:} Optimize for encoding speed. Train lightweight policies for in-situ compression during simulation runtime.
+
+    \item \textbf{Transfer to Other Domains:} Apply to climate data (CMIP6), medical imaging (CT/MRI scans), materials science (molecular dynamics).
+\end{enumerate}
+
+\subsection{If Primary Experiments Show Moderate Success}
+
+\begin{enumerate}
+    \item \textbf{Better Reward Shaping:} Investigate more sophisticated topology metrics (persistent homology, Morse-Smale complex), incorporate domain expert feedback.
+
+    \item \textbf{Hierarchical RL:} Two-level policy: high-level decides which regions to focus on, low-level decides compression strategy per region.
+
+    \item \textbf{Hybrid Approaches:} Combine RL-guided decisions with traditional compressors (RL selects error bounds for SZ spatially adaptively).
+
+    \item \textbf{Improved Conditioning:} Better ways to inject critical point information into diffusion model (attention mechanisms, cross-attention to critical point embeddings).
+\end{enumerate}
+
+\subsection{If Primary Experiments Struggle}
+
+\begin{enumerate}
+    \item \textbf{Simpler RL Problem:} Start with 2D scalar fields, smaller state/action spaces. Understand where RL fails before scaling to 3D.
+
+    \item \textbf{Supervised Learning First:} Instead of RL, train supervised models to predict good compression strategies from expert-labeled data. Use this to understand if the problem is learnable before introducing RL complexity.
+
+    \item \textbf{Alternative Generative Models:} Replace diffusion with VAE-GAN hybrids, normalizing flows, or autoregressive models. Test if diffusion is the bottleneck.
+
+    \item \textbf{Theoretical Analysis:} Analyze fundamental trade-offs between compression and topology preservation. Are there information-theoretic limits we're hitting?
+
+    \item \textbf{Ablation Studies:} Systematically remove components (RL without diffusion? Diffusion without RL?) to identify what contributes to performance.
+\end{enumerate}
+
+\subsection{Long-term Vision}
+
+If this line of research proves fruitful, longer-term follow-ups include:
+
+\begin{itemize}
+    \item \textbf{Deployment:} Integrate into scientific simulation frameworks (AMReX, Enzo, OpenFOAM) for production use
+    \item \textbf{Standardization:} Work with communities to define topology-preservation benchmarks for scientific compression
+    \item \textbf{Meta-learning:} Train policies that can quickly adapt to new scientific domains with few examples
+    \item \textbf{Co-design:} Work with domain scientists to identify which topological features matter for different science questions
+\end{itemize}
+
+\section{Timeline}
+
+\begin{table}[h]
+\centering
+\caption{Proposed Project Timeline (12 weeks)}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Week} & \textbf{Tasks} & \textbf{Deliverables} \\ \midrule
+1-2 & Data preprocessing, baseline setup & Nyx/Miranda datasets ready \\
+& & Baseline compression results \\ \midrule
+3-4 & Diffusion model implementation & Trained diffusion model \\
+& & Initial reconstruction results \\ \midrule
+5-6 & RL environment setup & Working RL training loop \\
+& & Reward function validation \\ \midrule
+7-9 & RL policy training & Trained policies \\
+& & Hyperparameter tuning \\ \midrule
+10-11 & Evaluation and analysis & Complete experimental results \\
+& & Generalization tests \\ \midrule
+12 & Writing and presentation & Final report and presentation \\ \bottomrule
+\end{tabular}
+\end{table}
+
+\section{Conclusion}
+
+This project addresses a critical problem in scientific computing—sustainable data storage—by combining three cutting-edge ML techniques: reinforcement learning, diffusion models, and topological data analysis. The key innovation is using RL to learn \textit{task-aware} compression strategies that prioritize scientifically meaningful features (critical points) over uniform reconstruction quality.
+
+Success would demonstrate that:
+\begin{enumerate}
+    \item ML can learn scientific priors from reward signals (not just supervised data)
+    \item Diffusion models are applicable beyond image generation, to structured scientific data
+    \item Topological constraints can be effectively integrated into learned compression
+\end{enumerate}
+
+Even negative results would be valuable, revealing fundamental limits or guiding the design of better approaches. The experiments are designed to provide insights regardless of outcome, with clear paths for follow-up work.
+
+\bibliographystyle{plain}
+\begin{thebibliography}{10}
+
+\bibitem{lakshminarasimhan2011compressing}
+S. Lakshminarasimhan, N. Shah, S. Ethier, et al.
+\newblock Compressing the incompressible with ISABELA: In-situ reduction of spatio-temporal data.
+\newblock In \textit{European Conference on Parallel Processing}, 2011.
+
+\bibitem{di2016fast}
+S. Di and F. Cappello.
+\newblock Fast error-bounded lossy HPC data compression with SZ.
+\newblock In \textit{IEEE International Parallel and Distributed Processing Symposium}, 2016.
+
+\bibitem{lindstrom2014fixed}
+P. Lindstrom.
+\newblock Fixed-rate compressed floating-point arrays.
+\newblock \textit{IEEE Transactions on Visualization and Computer Graphics}, 2014.
+
+\bibitem{balle2018variational}
+J. Ballé, D. Minnen, S. Singh, et al.
+\newblock Variational image compression with a scale hyperprior.
+\newblock In \textit{International Conference on Learning Representations}, 2018.
+
+\bibitem{glaws2020deep}
+A. Glaws, R. King, and M. Sprague.
+\newblock Deep learning for in situ data compression of large turbulent flow simulations.
+\newblock \textit{Physical Review Fluids}, 2020.
+
+\bibitem{ho2020denoising}
+J. Ho, A. Jain, and P. Abbeel.
+\newblock Denoising diffusion probabilistic models.
+\newblock In \textit{NeurIPS}, 2020.
+
+\bibitem{rombach2022high}
+R. Rombach, A. Blattmann, D. Lorenz, et al.
+\newblock High-resolution image synthesis with latent diffusion models.
+\newblock In \textit{CVPR}, 2022.
+
+\bibitem{price2024gencast}
+I. Price, et al.
+\newblock GenCast: Diffusion-based ensemble forecasting for medium-range weather.
+\newblock \textit{arXiv preprint}, 2024.
+
+\bibitem{hoogeboom2022equivariant}
+E. Hoogeboom, V. G. Satorras, C. Vignac, and M. Welling.
+\newblock Equivariant diffusion for molecule generation in 3D.
+\newblock In \textit{ICML}, 2022.
+
+\bibitem{theis2022lossy}
+L. Theis, T. Salimans, M. D. Hoffman, and F. Mentzer.
+\newblock Lossy compression with Gaussian diffusion.
+\newblock \textit{arXiv preprint}, 2022.
+
+\bibitem{chen2019deep}
+Z. Chen, K. Zeng, et al.
+\newblock Deep reinforcement learning for video streaming quality adaptation.
+\newblock In \textit{ACM Multimedia}, 2019.
+
+\bibitem{ramanah2020optimal}
+D. K. Ramanah, G. Lavaux, and B. D. Wandelt.
+\newblock Optimal deep learning of cosmological initial conditions.
+\newblock \textit{Physical Review D}, 2020.
+
+\bibitem{heine2016survey}
+C. Heine, et al.
+\newblock A survey of topology‐based methods in visualization.
+\newblock \textit{Computer Graphics Forum}, 2016.
+
+\bibitem{sousbie2011persistent}
+T. Sousbie.
+\newblock The persistent cosmic web and its filamentary structure: Theory and implementations.
+\newblock \textit{Monthly Notices of the Royal Astronomical Society}, 2011.
+
+\bibitem{kasten2011framework}
+J. Kasten, I. Hotz, B. R. Noack, and H.-C. Hege.
+\newblock A framework for extraction and tracking of vortices in 3D time-dependent flow fields.
+\newblock In \textit{Topological Methods in Data Analysis and Visualization II}, 2011.
+
+\bibitem{bremer2004topological}
+P.-T. Bremer, H. Edelsbrunner, B. Hamann, and V. Pascucci.
+\newblock A topological hierarchy for functions on triangulated surfaces.
+\newblock \textit{IEEE Transactions on Visualization and Computer Graphics}, 2004.
+
+\end{thebibliography}
+
+\end{document}
