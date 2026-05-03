@@ -1,0 +1,50 @@
+\section{Existing Approaches and Limitations}
+\label{sec:related}
+
+% Q2: What are existing approaches to this problem and what are their limitations?
+
+\subsection{Traditional Scientific Data Compression}
+
+\paragraph{SZ Compression}
+SZ~\cite{sz2016} is a widely-used lossy compressor for scientific data that provides error-bounded compression. Users specify an absolute or relative error bound, and SZ guarantees that no reconstructed value deviates beyond this bound. However, SZ applies uniform error bounds across the entire dataset, treating scientifically critical regions the same as unimportant ones.
+
+\paragraph{ZFP Compression}
+ZFP~\cite{zfp2014} provides fixed-rate compression for floating-point arrays using a block-based transform approach. While efficient, ZFP also lacks awareness of data semantics---it optimizes for uniform reconstruction quality rather than preserving specific features.
+
+\textbf{Limitation}: Both methods optimize for point-wise error metrics (MSE, max error) rather than structural or topological preservation.
+
+\subsection{Neural Compression}
+
+Recent work has explored using neural networks for scientific data compression:
+\begin{itemize}
+    \item Autoencoders (VAE) learn compressed latent representations
+    \item Neural implicit representations encode data as network weights
+\end{itemize}
+
+\textbf{Limitation}: These methods typically optimize for reconstruction loss (MSE, LPIPS) which does not directly correspond to topological feature preservation.
+
+\subsection{Topology-Aware Methods}
+
+Topological data analysis~\cite{edelsbrunner2010} provides tools for extracting and comparing topological features:
+\begin{itemize}
+    \item Persistence diagrams summarize multi-scale topology
+    \item Morse-Smale complexes capture gradient flow structure
+\end{itemize}
+
+Some work has explored topology-preserving simplification, but these methods are typically post-hoc rather than integrated into the compression pipeline.
+
+\textbf{Limitation}: Existing topology-aware methods are not designed for learned, adaptive compression.
+
+\subsection{Gap in Existing Work}
+
+% TODO: Add comparison table
+% \input{tables/related_work_comparison}
+
+To our knowledge, no prior work combines:
+\begin{enumerate}
+    \item Reinforcement learning for adaptive compression decisions
+    \item Diffusion models for high-quality reconstruction
+    \item Topology-aware rewards for critical point preservation
+\end{enumerate}
+
+Our approach fills this gap by learning task-specific compression policies that directly optimize for topological feature preservation.

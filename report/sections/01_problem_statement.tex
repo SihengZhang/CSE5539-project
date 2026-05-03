@@ -1,0 +1,49 @@
+\section{Problem Statement and Motivation}
+\label{sec:problem}
+
+% Q1: What is the problem you are trying to solve? Why does it matter? Who cares?
+
+\subsection{The Scientific Data Compression Challenge}
+
+Scientific simulations generate vast amounts of data. Modern cosmological simulations, climate models, and fluid dynamics computations routinely produce petabytes of output that must be stored, transmitted, and analyzed. For example, the NYX cosmology simulation~\cite{nyx2013} generates 3D fields representing dark matter density, temperature, and velocity across grids of $512^3$ or larger.
+
+% TODO: Add figure showing data growth projections
+% \begin{figure}[h]
+%     \centering
+%     \includegraphics[width=0.8\textwidth]{problem/data_growth.png}
+%     \caption{Scientific data growth projections.}
+%     \label{fig:data-growth}
+% \end{figure}
+
+Current compression methods like SZ~\cite{sz2016} and ZFP~\cite{zfp2014} achieve high compression ratios by applying uniform error bounds across the entire dataset. However, this approach treats all data points equally, regardless of their scientific importance.
+
+\subsection{Why Topology Matters}
+
+In scalar fields, \textbf{critical points}---locations where the gradient vanishes ($\gradient f = 0$)---carry significant scientific meaning:
+\begin{itemize}
+    \item \textbf{Local minima}: Density voids, cold spots
+    \item \textbf{Local maxima}: Density peaks, dark matter halos, hot spots
+    \item \textbf{Saddle points}: Transition regions, filament structures
+\end{itemize}
+
+These topological features are essential for scientific analysis. A compression method that destroys or displaces critical points renders the data less useful for downstream analysis, even if traditional metrics like PSNR remain high.
+
+% TODO: Add figure illustrating critical points in cosmology data
+
+\subsection{Research Question}
+
+This leads to our central research question:
+
+\begin{quote}
+\textit{Can we learn task-aware compression strategies that adaptively preserve topologically critical features while achieving high compression ratios?}
+\end{quote}
+
+\subsection{Contributions}
+
+We make the following contributions:
+\begin{enumerate}
+    \item A reinforcement learning framework for learning adaptive compression policies based on local field topology
+    \item A diffusion model for reconstructing scientific fields conditioned on preserved critical point locations
+    \item Topology-aware reward functions that directly optimize for critical point preservation
+    \item Experimental evaluation on NYX cosmology data demonstrating [TODO: key results]
+\end{enumerate}

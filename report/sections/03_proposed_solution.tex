@@ -1,0 +1,88 @@
+\section{Proposed Solution}
+\label{sec:method}
+
+% Q3: How do you propose to get closer to the solution to this problem?
+
+We propose a three-component system that learns to compress scientific data while preserving topological features.
+
+% TODO: Add architecture diagram
+% \begin{figure}[h]
+%     \centering
+%     \includegraphics[width=\textwidth]{method/architecture.png}
+%     \caption{System architecture: RL agent determines compression policy, diffusion model reconstructs from compressed representation.}
+%     \label{fig:architecture}
+% \end{figure}
+
+\subsection{RL Compression Agent}
+
+We formulate compression as a Markov Decision Process where an RL agent learns to allocate bits across spatial regions.
+
+\paragraph{State Space}
+For each local region, the state $\state$ includes:
+\begin{itemize}
+    \item Local field statistics (mean, variance, range)
+    \item Gradient magnitude $|\gradient f|$
+    \item Hessian eigenvalues (curvature information)
+    \item Estimated critical point proximity
+\end{itemize}
+
+\paragraph{Action Space}
+The agent selects a compression level $\action \in \{1, 2, \ldots, K\}$ for each region, where higher values indicate more aggressive compression (fewer bits).
+
+\paragraph{Policy}
+We use Proximal Policy Optimization (PPO)~\cite{ppo2017} to learn a policy $\policy(\action | \state)$ that maximizes expected reward.
+
+\subsection{Diffusion Reconstruction Model}
+
+We employ a denoising diffusion probabilistic model (DDPM)~\cite{ddpm2020} to reconstruct the full field from the compressed representation.
+
+\paragraph{Architecture}
+A U-Net backbone processes the compressed data along with:
+\begin{itemize}
+    \item Preserved critical point locations as conditioning
+    \item Compression mask indicating which regions have high/low precision
+\end{itemize}
+
+\paragraph{Training}
+The diffusion model is trained to denoise corrupted scientific fields, learning physical priors from the training data distribution.
+
+\subsection{Topology-Aware Rewards}
+
+The RL agent's reward function $\reward$ balances compression ratio with topology preservation:
+
+\begin{equation}
+    \reward = \alpha \cdot R_{\text{compression}} + \beta \cdot R_{\text{topology}} + \gamma \cdot R_{\text{quality}}
+\end{equation}
+
+where:
+\begin{itemize}
+    \item $R_{\text{compression}}$: Bits saved relative to uncompressed size
+    \item $R_{\text{topology}}$: Critical point preservation rate and position accuracy
+    \item $R_{\text{quality}}$: Traditional quality metrics (PSNR, SSIM)
+\end{itemize}
+
+\paragraph{Critical Point Metrics}
+We measure topology preservation via:
+\begin{itemize}
+    \item \textbf{Detection rate}: Fraction of original critical points found in reconstruction
+    \item \textbf{Position error}: Mean distance between matched critical points
+    \item \textbf{Type accuracy}: Fraction of detected CPs with correct type (min/max/saddle)
+\end{itemize}
+
+\subsection{Training Pipeline}
+
+\begin{algorithm}[h]
+\caption{RL-Diffusion Compression Training}
+\begin{algorithmic}[1]
+\State Pre-train diffusion model on scientific data
+\State Initialize RL policy $\policy$
+\For{each training iteration}
+    \State Sample batch of data slices
+    \State RL agent selects compression levels per region
+    \State Compress data according to policy
+    \State Reconstruct using diffusion model
+    \State Compute topology-aware reward
+    \State Update policy using PPO
+\EndFor
+\end{algorithmic}
+\end{algorithm}

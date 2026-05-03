@@ -1,0 +1,43 @@
+\documentclass[11pt]{article}
+\input{preamble}
+
+\title{RL-Driven Diffusion Models for Topology-Preserving\\Scientific Data Compression}
+\author{
+    Siheng Zhang\\
+    CSE 5539 Course Project\\
+    The Ohio State University\\
+    \texttt{zhang.13642@osu.edu}
+}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+% TODO: Write abstract after experiments are complete
+Scientific simulations generate petabytes of data that must be compressed for storage and transmission. Current compression methods treat all data uniformly, potentially destroying critical topological features (local minima, maxima, saddle points) essential for scientific analysis. We propose combining reinforcement learning with diffusion models to learn task-aware compression strategies that preserve topologically critical features. Our RL agent learns where to allocate compression bits based on local field properties, while a diffusion model reconstructs the full field conditioned on preserved critical point locations. We evaluate on cosmological simulation data (NYX), demonstrating [TODO: results]. Our approach achieves [TODO: compression ratio] compression while preserving [TODO: percentage]\% of critical points, compared to [TODO: baseline comparison].
+\end{abstract}
+
+% Section 1: Problem Statement and Motivation
+\input{sections/01_problem_statement}
+
+% Section 2: Existing Approaches and Limitations
+\input{sections/02_existing_approaches}
+
+% Section 3: Proposed Solution
+\input{sections/03_proposed_solution}
+
+% Section 4: Why It Should Work
+\input{sections/04_why_it_works}
+
+% Section 5: Experimental Results
+\input{sections/05_experimental_results}
+
+% Section 6: Lessons Learned
+\input{sections/06_lessons_learned}
+
+\bibliographystyle{plain}
+\bibliography{bibliography}
+
+\end{document}

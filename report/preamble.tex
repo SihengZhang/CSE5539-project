@@ -1,0 +1,61 @@
+% Preamble - Shared packages and macros
+
+% Page geometry
+\usepackage[margin=1in]{geometry}
+
+% Math packages
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+
+% Graphics and figures
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{float}
+\graphicspath{{figures/}}
+
+% Tables
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{array}
+
+% Algorithms
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+
+% Code listings
+\usepackage{listings}
+\lstset{
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    frame=single
+}
+
+% Colors
+\usepackage{xcolor}
+\definecolor{linkblue}{RGB}{0,102,204}
+
+% Hyperlinks
+\usepackage[colorlinks=true,linkcolor=linkblue,citecolor=linkblue,urlcolor=linkblue]{hyperref}
+
+% Citations
+\usepackage{cite}
+
+% Custom macros for topology
+\newcommand{\gradient}{\nabla}
+\newcommand{\hessian}{\mathbf{H}}
+\newcommand{\critpoint}{\mathbf{x}^*}
+\newcommand{\compression}{\mathcal{C}}
+\newcommand{\reconstruction}{\mathcal{R}}
+\newcommand{\reward}{\mathcal{R}}
+\newcommand{\state}{\mathbf{s}}
+\newcommand{\action}{\mathbf{a}}
+\newcommand{\policy}{\pi}
+
+% Theorem environments
+\newtheorem{definition}{Definition}
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}{Proposition}
+
+% Todo notes (remove for final)
+\usepackage{todonotes}

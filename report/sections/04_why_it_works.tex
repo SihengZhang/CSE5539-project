@@ -1,0 +1,54 @@
+\section{Why the Solution Should Work}
+\label{sec:justification}
+
+% Q4: Why do you think your solution will work?
+
+\subsection{Theoretical Motivation}
+
+Our approach is grounded in several key insights:
+
+\paragraph{Topology is Learnable}
+Critical points in scalar fields have distinctive local signatures---the gradient vanishes and the Hessian matrix determines the type. An RL agent with access to local gradient and curvature information can learn to identify and prioritize these regions.
+
+\paragraph{Diffusion Models Learn Physical Priors}
+Diffusion models have shown remarkable ability to learn complex data distributions. When trained on scientific data, they implicitly learn physical constraints and correlations. This enables high-quality reconstruction even from heavily compressed representations.
+
+\paragraph{RL Can Learn Non-Obvious Strategies}
+Unlike hand-crafted heuristics, reinforcement learning can discover compression strategies that are not immediately intuitive to human designers. The agent may learn to:
+\begin{itemize}
+    \item Preserve certain saddle points that are critical for filament structure
+    \item Aggressively compress flat regions while maintaining precision near extrema
+    \item Adapt strategy based on local data characteristics
+\end{itemize}
+
+\subsection{Connection to Prior Work}
+
+Our approach builds on established foundations:
+
+\begin{itemize}
+    \item \textbf{Adaptive compression}: Prior work shows that spatially-varying compression can outperform uniform approaches
+    \item \textbf{Conditional generation}: Diffusion models conditioned on partial information (inpainting, super-resolution) achieve high quality
+    \item \textbf{RL for optimization}: RL has been successfully applied to learn policies for complex optimization problems
+\end{itemize}
+
+\subsection{Expected Outcomes}
+
+Based on our analysis, we expect:
+
+\begin{enumerate}
+    \item \textbf{Higher critical point preservation} at equivalent compression ratios compared to uniform methods
+    \item \textbf{Interpretable policies} where the agent allocates more bits to topologically important regions
+    \item \textbf{Graceful degradation} where topology preservation remains high even at aggressive compression levels
+\end{enumerate}
+
+\subsection{Potential Challenges}
+
+We acknowledge several challenges:
+
+\begin{itemize}
+    \item Training stability of RL with sparse topology rewards
+    \item Computational cost of diffusion model inference
+    \item Generalization across different scientific domains
+\end{itemize}
+
+These challenges inform our experimental design and evaluation criteria.

@@ -1,0 +1,6 @@
+pysz
+zfpy
+vtk
+torch
+scipy
+matplotlib

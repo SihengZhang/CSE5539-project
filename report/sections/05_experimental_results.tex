@@ -1,0 +1,103 @@
+\section{Experimental Results}
+\label{sec:experiments}
+
+% Q5: What happened when you tried your solution? How did it compare to existing approaches?
+
+\subsection{Experimental Setup}
+
+\paragraph{Dataset}
+We use the NYX cosmology simulation~\cite{nyx2013} temperature field:
+\begin{itemize}
+    \item Original volume: $512 \times 512 \times 512$ float32
+    \item Extracted: 3,000 random $256 \times 256$ 2D slices
+    \item Slice distribution: X-axis (1,004), Y-axis (1,012), Z-axis (984)
+    \item Value range: $[2.28 \times 10^3, 4.78 \times 10^6]$ (normalized to $[0, 1]$)
+\end{itemize}
+
+\paragraph{Critical Point Analysis}
+We analyzed the topological structure of our dataset:
+
+\input{tables/critical_point_stats}
+
+Key observations:
+\begin{itemize}
+    \item Saddle points dominate (55.5\%), followed by minima (28.2\%) and maxima (16.3\%)
+    \item High variance in critical point density (0 to 1,854 per slice)
+    \item Coefficient of variation: 229.8\%
+\end{itemize}
+
+% TODO: Add critical point distribution figure
+% \begin{figure}[h]
+%     \centering
+%     \includegraphics[width=\textwidth]{analysis/critical_points_distribution.png}
+%     \caption{Distribution of critical points across slices.}
+%     \label{fig:cp-distribution}
+% \end{figure}
+
+\subsection{Baseline Methods}
+
+We compare against the following baselines:
+
+\paragraph{SZ Compression}
+% TODO: Run SZ experiments and fill in results
+\begin{itemize}
+    \item Error bounds tested: [TODO]
+    \item Results: [TODO]
+\end{itemize}
+
+\paragraph{ZFP Compression}
+% TODO: Run ZFP experiments and fill in results
+\begin{itemize}
+    \item Rates tested: [TODO]
+    \item Results: [TODO]
+\end{itemize}
+
+\paragraph{VAE Baseline}
+% TODO: Train VAE and fill in results
+\begin{itemize}
+    \item Architecture: [TODO]
+    \item Results: [TODO]
+\end{itemize}
+
+% TODO: Add baseline comparison table
+% \input{tables/baseline_comparison}
+
+\subsection{Diffusion Model Results}
+
+% TODO: Train diffusion model and fill in results
+
+\paragraph{Training}
+\begin{itemize}
+    \item Architecture: [TODO]
+    \item Training iterations: [TODO]
+    \item Training time: [TODO]
+\end{itemize}
+
+\paragraph{Reconstruction Quality}
+% TODO: Add results
+
+\paragraph{Critical Point Preservation}
+% TODO: Add results
+
+\subsection{RL Agent Results}
+
+% TODO: Train RL agent and fill in results
+
+\paragraph{Policy Behavior}
+% TODO: Analyze learned policy
+
+\paragraph{Compression Performance}
+% TODO: Add results
+
+\paragraph{Comparison with Baselines}
+% TODO: Add comparison table and figures
+
+\subsection{Ablation Studies}
+
+% TODO: Run ablation studies
+
+\paragraph{Reward Function Components}
+% TODO: Ablate different reward terms
+
+\paragraph{Architecture Choices}
+% TODO: Ablate architecture decisions
